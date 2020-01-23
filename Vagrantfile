@@ -71,7 +71,7 @@ Vagrant.configure("2") do |config|
     
     #Install dependencies
     apt-get update
-    apt-get upgrade
+    apt-get upgrade -y
     apt-get install -y python3-pip python3-dev mariadb-server libmariadbclient-dev libssl-dev virtualenv
 
     cp /vagrant/mariadb/my.cnf /etc/mysql/my.cnf #Exposes MariaDB on 3306 so you can access from host.
