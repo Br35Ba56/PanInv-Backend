@@ -76,6 +76,7 @@ Vagrant.configure("2") do |config|
 
     cp /vagrant/mariadb/my.cnf /etc/mysql/my.cnf #Exposes MariaDB on 3306 so you can access from host.
     mariadb -u root < /vagrant/mariadb/setup.sql #Sets up user
+    mariadb -u root paninv </vagrant/PantryInventory/paninv.sql
     systemctl restart mysql #Reset mysql so changes take effect
     cd /vagrant && git clone https://github.com/Br35Ba56/PantryInventory.git  #Clones repo to /vagrant
     virtualenv -p python3 ${ENV_DIR} 
