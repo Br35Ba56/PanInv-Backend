@@ -72,16 +72,11 @@ Vagrant.configure("2") do |config|
     #Install dependencies
     apt-get update
     apt-get upgrade -y
-    apt-get install -y python3-pip python3-dev mariadb-server libmariadbclient-dev libssl-dev virtualenv
-
-    cp /vagrant/mariadb/my.cnf /etc/mysql/my.cnf #Exposes MariaDB on 3306 so you can access from host.
-    mariadb -u root < /vagrant/mariadb/setup.sql #Sets up user
-    systemctl restart mysql #Reset mysql so changes take effect
-    cd /vagrant && git clone https://github.com/Br35Ba56/PantryInventory.git  #Clones repo to /vagrant
-    mariadb -u root paninv </vagrant/PantryInventory/paninv.sql
+    apt-get install -y python3-pip python3-dev libssl-dev virtualenv    
+    cd /vagrant && git clone --single-branch --branch Oauth-Implementation https://github.com/Br35Ba56/PantryInventory.git  #Clones repo to /vagrant
     virtualenv -p python3 ${ENV_DIR} 
     source ${ENV_DIR}/bin/activate
     pip install -r ${BASE_DIR}/requirements.txt --no-cache-dir
-
+    
    SHELL
 end
