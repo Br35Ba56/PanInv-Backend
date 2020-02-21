@@ -16,13 +16,9 @@ ssh into backend:
 
 Start the Django development server.
 
-`source /opt/vagrant/python/env/bin/activate`
+`cd /vagrant`
 
-`python /vagrant/PantryInventory/manage.py makemigrations`
-
-`python /vagrant/PantryInventory/manage.py migrate`
-
-`python /vagrant/PantryInventory/manage.py runserver 0.0.0.0:8000`
+`./start_server.sh`
 
 From the host browser, naviage to localhost:8000/admin/ to verify it is running
 
