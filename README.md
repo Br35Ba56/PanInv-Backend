@@ -20,7 +20,7 @@ Start the Django development server.
 
 `./start_server.sh`
 
-From the host browser, naviage to localhost:8000 to verify it is running
+From the host browser, naviage to localhost:8000/admin/ to verify it is running
 
 NOTE:
 Host project folder ./PantryInventory is synched to guest machine /vagrant
