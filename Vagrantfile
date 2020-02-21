@@ -73,7 +73,7 @@ Vagrant.configure("2") do |config|
     apt-get update
     apt-get upgrade -y
     apt-get install -y python3-pip python3-dev libssl-dev virtualenv    
-    cd /vagrant && git clone --single-branch --branch Oauth-Implementation https://github.com/Br35Ba56/PantryInventory.git  #Clones repo to /vagrant
+    cd /vagrant && git clone https://github.com/Br35Ba56/PantryInventory.git  #Clones repo to /vagrant
     virtualenv -p python3 ${ENV_DIR} 
     source ${ENV_DIR}/bin/activate
     pip install -r ${BASE_DIR}/requirements.txt --no-cache-dir
