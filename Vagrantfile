@@ -77,6 +77,6 @@ Vagrant.configure("2") do |config|
     virtualenv -p python3 ${ENV_DIR} 
     source ${ENV_DIR}/bin/activate
     pip install -r ${BASE_DIR}/requirements.txt --no-cache-dir
-    
+    ${BASE_DIR}/clean.sh
    SHELL
 end
