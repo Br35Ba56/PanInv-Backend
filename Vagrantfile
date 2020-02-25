@@ -65,6 +65,7 @@ Vagrant.configure("2") do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
    config.vm.provision "shell", inline: <<-SHELL
+    set -x
     #Variables
     BASE_DIR=/vagrant/PantryInventory
     ENV_DIR=/opt/vagrant/python/env
@@ -78,5 +79,6 @@ Vagrant.configure("2") do |config|
     source ${ENV_DIR}/bin/activate
     pip install -r ${BASE_DIR}/requirements.txt --no-cache-dir
     ${BASE_DIR}/clean.sh
+    /vagrant/PantryInventory/create_group.sh
    SHELL
 end
