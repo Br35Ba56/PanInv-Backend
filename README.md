@@ -29,7 +29,7 @@ Run the Create Items script.
 
 `source /opt/vagrant/python/env/bin/activate`
 
-`cd /vagrant/PantryInventory/ && python /vagrant/PantryInventory/manage.py runserver create_items`
+`cd /vagrant/PantryInventory/ && python /vagrant/PantryInventory/manage.py create_items`
 
 NOTE:
-Each time you do this it'll create 10 random users and 30 items per user.
+Each time you do this it'll create 15 random users and 1500 items per user, this takes a while to do so be patient. Once the scipt is done there will be a users.csv file generated for their login information.
