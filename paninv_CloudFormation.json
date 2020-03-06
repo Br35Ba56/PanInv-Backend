@@ -1,0 +1,397 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+        "PANINVVPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": "10.0.0.0/16"
+            }
+        },
+        "PANINVPublicSubnetA": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": "us-east-1a",
+                "VpcId": {
+                    "Ref": "PANINVVPC"
+                },
+                "CidrBlock": "10.0.1.0/24",
+                "MapPublicIpOnLaunch": "False"
+            }
+        },
+        "IGW": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {}
+        },
+        "IgwAttachment": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "PANINVVPC"
+                },
+                "InternetGatewayId": {
+                    "Ref": "IGW"
+                }
+            }
+        },
+        "PANINVPublicRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "PANINVVPC"
+                }
+            }
+        },
+        "PANINVPublicRoute": {
+            "Type": "AWS::EC2::Route",
+            "DependsOn": "IGW",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PANINVPublicRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "IGW"
+                }
+            }
+        },
+        "PANINVPublicSubnetRouteAssociationA": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PANINVPublicRouteTable"
+                },
+                "SubnetId": {
+                    "Ref": "PANINVPublicSubnetA"
+                }
+            }
+        },
+        "PANINVInstanceSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow HTTPS and SSH traffic to our host",
+                "VpcId": {
+                    "Ref": "PANINVVPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                        
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "1",
+                        "ToPort": "65535",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },    
+        "PANINVEC2Instance": {
+            "Type": "AWS::EC2::Instance",
+            "Metadata": {
+                "Tags": [
+                    {
+                        "Key": "name",
+                        "Value": "paninv.api.A"
+                    },
+                    {
+                        "Key": "stack",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    }
+                ],
+                "AWS::CloudFormation::Init": {
+                    "configSets": {
+                        "server_conf": [
+                            "configure_cfn",
+                            "install_webserver",
+                            "install_django_dependencies",
+                            "install_tools",
+                            "install_paninv-api"
+                        ]
+                    },
+                    "configure_cfn": {
+                        "files": {
+                            "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.PANINVEC2Instance.Metadata.AWS::CloudFormation::Init\n",
+                                            "action=/opt/aws/bin/cfn-init -v",
+                                            " --stack ",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            " --resource PANINVEC2Instance",
+                                            " --configsets server_conf",
+                                            " --region ",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000400",
+                                "owner": "root",
+                                "group": "root"
+                            },
+                            "/lib/systemd/system/cfn-hup.service": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[Unit]\n",
+                                            "Description=cfn-hup daemon\n",
+                                            "[Service]\n",
+                                            "Type=simple\n",
+                                            "ExecStart=/opt/aws/bin/cfn-hup\n",
+                                            "Restart=always\n",
+                                            "[Install]\n",
+                                            "WantedBy=multi-user.target\n"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000400",
+                                "owner": "root",
+                                "group": "root"
+                            },
+                            "/etc/cfn/cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackId"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "verbose=true\n",
+                                            "interval=5\n"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000400",
+                                "owner": "root",
+                                "group": "root"
+                            }
+                        },
+                        "commands": {
+                            "01_enable_cfn-hup": {
+                                "command": "systemctl enable cfn-hup.service"
+                            },
+                            "02_start_cfn-hup": {
+                                "command": "systemctl start cfn-hup.service"
+                            }
+                        }
+                    },
+                    "install_webserver": {
+                        "packages": {
+                            "apt": {
+                                "nginx": []
+                            }
+                        }
+                    },
+                    "install_tools": {
+                        "packages": {
+                            "apt": {
+                                "awscli": [],
+                                "supervisor": [],
+                                "ec2-api-tools": []
+                            }
+                        }
+                    },
+                    "install_django_dependencies": {
+                        "packages": {
+                            "apt": {
+                                "virtualenv": [],
+                                "libmysqlclient-dev": [],
+                                "python3-dev": [],
+                                "build-essential": [],
+                                "libssl-dev": [],
+                                "libffi-dev": [],
+                                "libxml2-dev": [],
+                                "libxslt1-dev": [],
+                                "zlib1g-dev": [],
+                                "gettext": [],
+                                "mysql-client-core-5.7": []
+                            }
+                        }
+                    },
+                   
+                    "install_paninv-api": {
+                        "commands": {
+                            "01_make_script_dir": {
+                                "command": "mkdir -p /root/scripts/work"
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash\n",
+                                "apt update\n",
+                                "apt-get update\n",
+                                "apt-get -y upgrade\n",
+                                "apt-get -y install python-pip\n",
+                                "pip install --upgrade pip",
+                                "mkdir -p /opt/aws/bin\n",
+                                "python /usr/lib/python2.7/dist-packages/easy_install.py --script-dir /opt/aws/bin https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+                                "/opt/aws/bin/cfn-init -v --stack ",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                " --resource PANINVEC2Instance --configsets server_conf --region us-east-1\n",
+                                "/opt/aws/bin/cfn-signal -e $? --stack ",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                " --resource PANINVEC2Instance --configsets server_conf --region us-east-1\n",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                },
+                "ImageId": "ami-04b9e92b5572fa0d1",
+                "KeyName": {
+                    "Ref": "SSHKeyName"
+                },
+                "InstanceType": "t2.micro",
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "PANINVInstanceSecurityGroup"
+                            }
+                        ],
+                        "SubnetId": {
+                            "Ref": "PANINVPublicSubnetA"
+                        }
+                    }
+                ],
+                "IamInstanceProfile": {
+                    "Ref": "PANINVEC2IAMInstanceProfile"
+                }
+            }
+        },
+        "PANINVEC2IAMInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "PANINVEC2IAMRole"
+                    }
+                ]
+            }
+        },
+        "PANINVEC2IAMRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "Path": "/",
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
+                    "arn:aws:iam::aws:policy/AWSCloudFormationReadOnlyAccess"
+                ]
+            }
+        },
+        "PANINVEC2RolePolicies": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "PANINVEC2S3ReadAccess",
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:Get*",
+                                "s3:List*"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                },
+                "Roles": [
+                    {
+                        "Ref": "PANINVEC2IAMRole"
+                    }
+                ]
+            }
+        }
+    },
+    "Parameters": {
+        "SSHKeyName": {
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+        }      
+    },
+    "Outputs": {
+        "PANINVEC2InstancePublicIP": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "PANINVEC2Instance",
+                    "PublicIp"
+                ]
+            }
+        },
+        "PANINVEC2InstanceID": {
+            "Value": {
+                "Ref": "PANINVEC2Instance"
+            }
+        }
+    }
+}
